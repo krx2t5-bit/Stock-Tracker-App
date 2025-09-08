@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trading Dashboard</title>
+  <style>
+    body {
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      background: #0d1117;
+      color: #e6edf3;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+      color: #58a6ff;
+      margin-bottom: 20px;
+    }
+    .section {
+      max-width: 900px;
+      margin: 20px auto;
+      padding: 20px;
+      background: #161b22;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+    }
+    .summary {
+      display: flex;
+      justify-content: space-around;
+      flex-wrap: wrap;
+    }
+    .card {
+      background: #21262d;
+      padding: 15px;
+      border-radius: 12px;
+      text-align: center;
+      flex: 1;
+      margin: 5px;
+    }
+    .card h2 {
+      font-size: 14px;
+      color: #8b949e;
+    }
+    .card p {
+      font-size: 18px;
+      font-weight: bold;
+    }
+    input, button {
+      width: 100%;
+      padding: 10px;
+      margin: 5px 0;
+      border-radius: 8px;
+      border: none;
+      font-size: 16px;
+    }
+    input {
+      background: #0d1117;
+      border: 1px solid #30363d;
+      color: #e6edf3;
+    }
+    button {
+      background: #238636;
+      color: white;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #2ea043;
+    }
+    table {
+      width: 100%;
+      margin-top: 15px;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 12px;
+      text-align: center;
+      border-bottom: 1px solid #30363d;
+    }
+    th {
+      background: #21262d;
+    }
+    .profit {
+      color: #00c853;
+      font-weight: bold;
+    }
+    .loss {
+      color: #ff1744;
+      font-weight: bold;
+    }
+    .positive {
+      background: rgba(0, 200, 83, 0.2);
+      border-left: 5px solid #00c853;
+      padding: 10px;
+      margin: 8px 0;
+      border-radius: 6px;
+    }
+    .negative {
+      background: rgba(255, 23, 68, 0.2);
+      border-left: 5px solid #ff1744;
+      padding: 10px;
+      margin: 8px 0;
+      border-radius: 6px;
+    }
+  </style>
+</head>
+<body>
+  <h1>📊 Trading Dashboard</h1>
+
+  <!-- Portfolio Tracker -->
+  <div class="section">
+    <h2>My Portfolio</h2>
+    <div class="summary">
+      <div class="card">
+        <h2>Total Investment</h2>
+        <p id="totalInvestment">₹0</p>
+      </div>
+      <div class="card">
+        <h2>Current Value</h2>
+        <p id="currentValue">₹0</p>
+      </div>
+      <div class="card">
+        <h2>Total P/L</h2>
+        <p id="totalPL">₹0</p>
+      </div>
+    </div>
+
+    <h3>Add Stock</h3>
+    <input type="text" id="name" placeholder="Stock Name">
+    <input type="number" id="buyPrice" placeholder="Buy Price">
+    <input type="number" id="currentPrice" placeholder="Current Price">
+    <input type="number" id="quantity" placeholder="Quantity">
+    <button onclick="addStock()">Add</button>
+
+    <table id="portfolioTable">
+      <tr>
+        <th>Stock</th>
+        <th>Buy Price</th>
+        <th>Current Price</th>
+        <th>Quantity</th>
+        <th>P/L</th>
+      </tr>
+    </table>
+  </div>
+
+  <!-- AI Stock Sentiment -->
+  <div class="section">
+    <h2>🤖 AI Stock Sentiment</h2>
+    <input type="text" id="stockName" placeholder="e.g. Reliance, Infosys, Tesla">
+    <button onclick="fetchNews()">Analyze Sentiment</button>
+    <div id="sentimentResult"></div>
+    <div id="headlines"></div>
+  </div>
+
+  <script src="https://unpkg.com/sentiment@5.0.2/dist/sentiment.min.js"></script>
+  <script>
+    // Portfolio Tracker
+    let totalInvestment = 0, currentValue = 0, totalPL = 0;
+    function updateSummary() {
+      document.getElementById("totalInvestment").innerText = "₹" + totalInvestment.toFixed(2);
+      document.getElementById("currentValue").innerText = "₹" + currentValue.toFixed(2);
+      const plElement = document.getElementById("totalPL");
+      plElement.innerText = "₹" + totalPL.toFixed(2);
+      plElement.style.color = totalPL >= 0 ? "#00c853" : "#ff1744";
+    }
+    function addStock(name="", buyPrice="", currentPrice="", quantity="") {
+      if (!name) {
+        name = document.getElementById("name").value;
+        buyPrice = parseFloat(document.getElementById("buyPrice").value);
+        currentPrice = parseFloat(document.getElementById("currentPrice").value);
+        quantity = parseFloat(document.getElementById("quantity").value);
+        if (!name || !buyPrice || !currentPrice || !quantity) {
+          alert("Please fill all fields");
+          return;
+        }
+      }
+      const profitLoss = (currentPrice - buyPrice) * quantity;
+      totalInvestment += buyPrice * quantity;
+      currentValue += currentPrice * quantity;
+      totalPL += profitLoss;
+      const profitLossClass = profitLoss >= 0 ? "profit" : "loss";
+      const table = document.getElementById("portfolioTable");
+      const row = table.insertRow();
+      row.innerHTML = `
+        <td>${name}</td>
+        <td>₹${buyPrice}</td>
+        <td>₹${currentPrice}</td>
+        <td>${quantity}</td>
+        <td class="${profitLossClass}">₹${profitLoss.toFixed(2)}</td>
+      `;
+      updateSummary();
+      document.getElementById("name").value = "";
+      document.getElementById("buyPrice").value = "";
+      document.getElementById("currentPrice").value = "";
+      document.getElementById("quantity").value = "";
+    }
+    const defaultStocks = [
+      {name: "Reliance", buy: 2500, current: 2700, qty: 5},
+      {name: "TCS", buy: 3400, current: 3500, qty: 3},
+      {name: "Infosys", buy: 1450, current: 1380, qty: 8},
+      {name: "HDFC Bank", buy: 1500, current: 1600, qty: 4},
+      {name: "Adani Green", buy: 900, current: 1200, qty: 6}
+    ];
+    defaultStocks.forEach(stock => addStock(stock.name, stock.buy, stock.current, stock.qty));
+
+    // AI Sentiment
+    const sentiment = new Sentiment();
+    const API_KEY = "YOUR_NEWSAPI_KEY"; // Replace with your NewsAPI key
+    async function fetchNews() {
+      const stock = document.getElementById("stockName").value;
+      if (!stock) {
+        alert("Please enter a stock name");
+        return;
+      }
+      const url = `https://newsapi.org/v2/everything?q=${stock}&language=en&sortBy=publishedAt&pageSize=5&apiKey=${API_KEY}`;
+      const res = await fetch(url);
+      const data = await res.json();
+      let score = 0, headlinesHTML = "";
+      data.articles.forEach(article => {
+        const s = sentiment.analyze(article.title).score;
+        score += s;
+        const sentimentClass = s >= 0 ? "positive" : "negative";
+        const label = s >= 0 ? "🟢 Bullish" : "🔴 Bearish";
+        headlinesHTML += `<div class="${sentimentClass}"><b>${label}</b> - ${article.title}</div>`;
+      });
+      const resultDiv = document.getElementById("sentimentResult");
+      if (score >= 0) {
+        resultDiv.innerHTML = `<h3>Overall Sentiment: 🟢 Positive (Bullish)</h3><p>Score: ${score}</p>`;
+      } else {
+        resultDiv.innerHTML = `<h3>Overall Sentiment: 🔴 Negative (Bearish)</h3><p>Score: ${score}</p>`;
+      }
+      document.getElementById("headlines").innerHTML = headlinesHTML;
+    }
+  </script>
+</body>
+</html>
